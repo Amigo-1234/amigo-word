@@ -8,7 +8,6 @@ let words = JSON.parse(localStorage.getItem("words")) || [];
 let timers = {};
 
 // Ask permission
-Notification.requestPermission();
 
 // Render UI
 function render() {
@@ -51,14 +50,22 @@ addBtn.addEventListener("click", () => {
   render();
 });
 
-// Start individual timer
+function sendNotification(word, meaning) {
+  if (Notification.permission === "granted") {
+    new Notification("AMIGO 🔴", {
+      body: `${word} → ${meaning}`,
+      icon: "icon.png"
+    });
+  } else {
+    console.log("No permission");
+  }
+}
+
 function startTimer(item) {
   const id = item.word + Date.now();
 
   timers[id] = setInterval(() => {
-    new Notification("AMIGO 🔥", {
-      body: `${item.word} → ${item.meaning}`
-    });
+    sendNotification(item.word, item.meaning);
   }, item.time * 60000);
 }
 
@@ -73,6 +80,21 @@ function deleteWord(index) {
   localStorage.setItem("words", JSON.stringify(words));
   location.reload(); // simple reset
 }
+
+const testBtn = document.getElementById("testBtn");
+
+testBtn.addEventListener("click", async () => {
+  const permission = await Notification.requestPermission();
+
+  if (permission === "granted") {
+    new Notification("AMIGO 🔴", {
+      body: "Test notification working 🚀",
+      icon: "icon.png"
+    });
+  } else {
+    alert("Notification permission denied ❌");
+  }
+});
 
 // Init
 render();
