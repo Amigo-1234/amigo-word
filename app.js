@@ -1,5 +1,5 @@
 // ==============================
-// 🔴 AMIGO APP + FIREBASE SETUP
+// 🔴 AMIGO FINAL VERSION
 // ==============================
 
 // DOM
@@ -15,10 +15,8 @@ let words = JSON.parse(localStorage.getItem("words")) || [];
 let timers = {};
 
 // ==============================
-// 🔥 FIREBASE CONFIG (CDN VERSION)
+// 🔥 FIREBASE SETUP
 // ==============================
-
-// Firebase scripts MUST be in HTML (I’ll show after)
 
 const firebaseConfig = {
   apiKey: "AIzaSyDYpP_Uk52egku25vZ4l4iRfkswlc6U4T0",
@@ -30,7 +28,6 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-
 const messaging = firebase.messaging();
 
 // ==============================
@@ -41,14 +38,17 @@ async function requestPermissionAndToken() {
   const permission = await Notification.requestPermission();
 
   if (permission === "granted") {
-    console.log("Permission granted ✅");
-
     try {
       const token = await messaging.getToken({
         vapidKey: "BHaUYFnHFOGdr7oTy3L0Ie6Z4gw24mHbprxGsF4I49X1kd4nJkOFNYSaG5K7HsHCSJ2Nbf2-Dp1PvrBpUbvUOsw"
       });
 
       console.log("🔥 TOKEN:", token);
+
+      // SAVE TOKEN
+      localStorage.setItem("fcm_token", token);
+
+      alert("Notifications enabled ✅");
 
     } catch (err) {
       console.error("Token error:", err);
@@ -63,17 +63,13 @@ async function requestPermissionAndToken() {
 // 🔘 TEST BUTTON
 // ==============================
 
-testBtn.addEventListener("click", () => {
-  requestPermissionAndToken();
-});
+testBtn.addEventListener("click", requestPermissionAndToken);
 
 // ==============================
-// 🔔 FOREGROUND MESSAGES
+// 🔔 FOREGROUND MESSAGE
 // ==============================
 
 messaging.onMessage((payload) => {
-  console.log("Message received:", payload);
-
   new Notification(payload.notification.title, {
     body: payload.notification.body,
     icon: "icon.png"
@@ -113,9 +109,14 @@ addBtn.addEventListener("click", () => {
 
   if (!word || !meaning || !time) return;
 
-  const newWord = { word, meaning, time };
-  words.push(newWord);
+  const newWord = {
+    word,
+    meaning,
+    time,
+    createdAt: Date.now()
+  };
 
+  words.push(newWord);
   localStorage.setItem("words", JSON.stringify(words));
 
   startTimer(newWord);
@@ -128,7 +129,7 @@ addBtn.addEventListener("click", () => {
 });
 
 // ==============================
-// ⏱ LOCAL TIMER (TEMP)
+// ⏱ LOCAL TIMER (OPEN APP ONLY)
 // ==============================
 
 function sendNotification(word, meaning) {
@@ -145,6 +146,7 @@ function startTimer(item) {
 
   timers[id] = setInterval(() => {
     sendNotification(item.word, item.meaning);
+    console.log("Triggered:", item.word);
   }, item.time * 60000);
 }
 
