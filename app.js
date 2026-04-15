@@ -1,5 +1,5 @@
 // ==============================
-// 🔴 AMIGO FINAL VERSION
+// 🔴 AMIGO CLEAN VERSION
 // ==============================
 
 // DOM
@@ -28,7 +28,48 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+
+// ✅ IMPORTANT ORDER
+const db = firebase.firestore();
 const messaging = firebase.messaging();
+
+// ==============================
+// ➕ ADD WORD (FIXED)
+// ==============================
+
+addBtn.addEventListener("click", () => {
+  const word = wordInput.value.trim();
+  const meaning = meaningInput.value.trim();
+  const time = parseInt(timeInput.value);
+
+  if (!word || !meaning || !time) return;
+
+  const newWord = {
+    word,
+    meaning,
+    time,
+    createdAt: Date.now()
+  };
+
+  // ✅ Save locally (UI)
+  words.push(newWord);
+  localStorage.setItem("words", JSON.stringify(words));
+
+  // ✅ Save to Firebase
+  db.collection("words").add(newWord)
+    .then(() => console.log("Saved to Firebase 🔥"))
+    .catch(err => console.error("Firebase error:", err));
+
+  // Start timer (local only)
+  startTimer(newWord);
+
+  // Reset inputs
+  wordInput.value = "";
+  meaningInput.value = "";
+  timeInput.value = "";
+
+  render();
+});
 
 // ==============================
 // 🔔 REQUEST PERMISSION + TOKEN
@@ -45,7 +86,6 @@ async function requestPermissionAndToken() {
 
       console.log("🔥 TOKEN:", token);
 
-      // SAVE TOKEN
       localStorage.setItem("fcm_token", token);
 
       alert("Notifications enabled ✅");
@@ -53,7 +93,6 @@ async function requestPermissionAndToken() {
     } catch (err) {
       console.error("Token error:", err);
     }
-
   } else {
     alert("Notification permission denied ❌");
   }
@@ -99,37 +138,7 @@ function render() {
 }
 
 // ==============================
-// ➕ ADD WORD
-// ==============================
-
-addBtn.addEventListener("click", () => {
-  const word = wordInput.value.trim();
-  const meaning = meaningInput.value.trim();
-  const time = parseInt(timeInput.value);
-
-  if (!word || !meaning || !time) return;
-
-  const newWord = {
-    word,
-    meaning,
-    time,
-    createdAt: Date.now()
-  };
-
-  words.push(newWord);
-  localStorage.setItem("words", JSON.stringify(words));
-
-  startTimer(newWord);
-
-  wordInput.value = "";
-  meaningInput.value = "";
-  timeInput.value = "";
-
-  render();
-});
-
-// ==============================
-// ⏱ LOCAL TIMER (OPEN APP ONLY)
+// ⏱ LOCAL TIMER
 // ==============================
 
 function sendNotification(word, meaning) {
