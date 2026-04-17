@@ -2,22 +2,35 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Word Reminder</title>
 
-<!-- GOOGLE FONT -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#120707">
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
   background: linear-gradient(135deg, #0a0a0a, #1a0b0b);
   color: white;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+#list {
+  height: calc(100vh - 70px);
+  overflow-y: auto;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 /* HEADER */
@@ -34,10 +47,8 @@ body {
   margin: 0;
   font-size: 20px;
   color: #b11226;
-  font-weight: 600;
 }
 
-/* ADD BUTTON */
 .addBtn {
   background: linear-gradient(135deg, #6d0f1a, #b11226);
   border: none;
@@ -49,12 +60,12 @@ body {
   cursor: pointer;
 }
 
-/* LIST */
-#list {
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+#notifBtn {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #b11226;
+  cursor: pointer;
 }
 
 /* CARD */
@@ -64,41 +75,28 @@ body {
   border-radius: 16px;
   padding: 15px;
   backdrop-filter: blur(8px);
-  transition: 0.2s;
 }
 
-.card:hover {
-  transform: scale(1.02);
-}
-
-/* TOP */
 .top {
   display: flex;
   justify-content: space-between;
-  align-items: center;
 }
 
-/* WORD */
 .word {
-  font-size: 18px;
   font-weight: 600;
 }
 
-/* MEANING */
 .meaning {
   font-size: 14px;
   color: #ddd;
   margin: 6px 0;
 }
 
-/* BOTTOM */
 .bottom {
   display: flex;
   justify-content: space-between;
-  align-items: center;
 }
 
-/* TIME */
 .time {
   font-size: 12px;
   color: #d46a6a;
@@ -111,9 +109,7 @@ body {
   height: 24px;
 }
 
-.switch input {
-  display: none;
-}
+.switch input { display: none; }
 
 .slider {
   position: absolute;
@@ -121,7 +117,6 @@ body {
   background: #333;
   border-radius: 20px;
   cursor: pointer;
-  transition: 0.3s;
 }
 
 .slider::before {
@@ -144,12 +139,10 @@ input:checked + .slider::before {
   transform: translateX(22px);
 }
 
-/* DELETE */
 .delete {
   background: none;
   border: none;
   color: #ff5c5c;
-  font-size: 18px;
   cursor: pointer;
 }
 
@@ -157,10 +150,10 @@ input:checked + .slider::before {
 #modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.85);
   display: none;
   justify-content: center;
   align-items: center;
+  background: rgba(0,0,0,0.85);
 }
 
 .modalContent {
@@ -171,12 +164,6 @@ input:checked + .slider::before {
   max-width: 350px;
 }
 
-.modalContent h2 {
-  margin-top: 0;
-  color: #b11226;
-}
-
-/* INPUT */
 input {
   width: 100%;
   padding: 12px;
@@ -187,23 +174,13 @@ input {
   color: white;
 }
 
-/* SAVE */
 .save {
   width: 100%;
   padding: 12px;
-  border: none;
   background: linear-gradient(135deg, #6d0f1a, #b11226);
-  color: white;
+  border: none;
   border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-/* MOBILE */
-@media (max-width: 500px) {
-  .word {
-    font-size: 16px;
-  }
+  color: white;
 }
 </style>
 </head>
@@ -212,12 +189,12 @@ input {
 
 <div class="header">
   <h1>Word Reminder</h1>
+  <button id="notifBtn">🔔</button>
   <button class="addBtn" onclick="openModal()">+</button>
 </div>
 
 <div id="list"></div>
 
-<!-- MODAL -->
 <div id="modal">
   <div class="modalContent">
     <h2>Add Word</h2>
@@ -229,7 +206,7 @@ input {
 </div>
 
 <script>
-// DOM FIRST
+// DOM
 const modal = document.getElementById("modal");
 const list = document.getElementById("list");
 const wordInput = document.getElementById("word");
@@ -239,15 +216,11 @@ const timeInput = document.getElementById("time");
 // DATA
 let words = JSON.parse(localStorage.getItem("words")) || [];
 let timers = {};
+let notificationsEnabled = true;
 
 // MODAL
-function openModal() {
-  modal.style.display = "flex";
-}
-
-function closeModal() {
-  modal.style.display = "none";
-}
+function openModal() { modal.style.display = "flex"; }
+function closeModal() { modal.style.display = "none"; }
 
 // ADD
 function addWord() {
@@ -255,7 +228,7 @@ function addWord() {
   const meaning = meaningInput.value.trim();
   const time = timeInput.value;
 
-  if (!word || !meaning || !time) return alert("Fill all fields");
+  if (!word || !meaning || !time) return alert("Fill all");
 
   const newWord = {
     word,
@@ -267,6 +240,10 @@ function addWord() {
   words.push(newWord);
   localStorage.setItem("words", JSON.stringify(words));
 
+  wordInput.value = "";
+  meaningInput.value = "";
+  timeInput.value = "";
+
   closeModal();
   render();
   startReminder(words.length - 1);
@@ -276,13 +253,12 @@ function addWord() {
 function render() {
   list.innerHTML = "";
 
-  words.forEach((item, index) => {
+  words.forEach((item, i) => {
     list.innerHTML += `
       <div class="card">
-
         <div class="top">
           <div class="word">${item.word}</div>
-          <button class="delete" onclick="removeWord(${index})">🗑</button>
+          <button class="delete" onclick="removeWord(${i})">🗑</button>
         </div>
 
         <div class="meaning">${item.meaning}</div>
@@ -291,49 +267,47 @@ function render() {
           <div class="time">${item.interval} min</div>
 
           <label class="switch">
-            <input type="checkbox" ${item.isActive ? "checked" : ""} onchange="toggle(${index})">
+            <input type="checkbox" ${item.isActive ? "checked" : ""} onchange="toggle(${i})">
             <span class="slider"></span>
           </label>
         </div>
-
       </div>
     `;
   });
 }
 
 // TOGGLE
-function toggle(index) {
-  words[index].isActive = !words[index].isActive;
+function toggle(i) {
+  words[i].isActive = !words[i].isActive;
   localStorage.setItem("words", JSON.stringify(words));
 
-  if (words[index].isActive) {
-    startReminder(index);
-  } else {
-    clearInterval(timers[index]);
-    delete timers[index];
+  if (words[i].isActive) startReminder(i);
+  else {
+    clearInterval(timers[i]);
+    delete timers[i];
   }
 
   render();
 }
 
 // DELETE
-function removeWord(index) {
-  clearInterval(timers[index]);
-  delete timers[index];
-  words.splice(index, 1);
+function removeWord(i) {
+  clearInterval(timers[i]);
+  delete timers[i];
+  words.splice(i, 1);
   localStorage.setItem("words", JSON.stringify(words));
   render();
 }
 
 // REMINDER
-function startReminder(index) {
-  if (timers[index]) return;
+function startReminder(i) {
+  if (timers[i]) return;
 
-  const item = words[index];
+  const item = words[i];
 
-  timers[index] = setInterval(() => {
-    if (item.isActive) {
-      new Notification(item.word, {
+  timers[i] = setInterval(() => {
+    if (item.isActive && notificationsEnabled && Notification.permission === "granted") {
+      new Notification(`📘 ${item.word}`, {
         body: item.meaning
       });
     }
@@ -347,10 +321,16 @@ function init() {
   });
 }
 
-// NOTIFICATION
+// NOTIFICATION PERMISSION
 if (Notification.permission !== "granted") {
   Notification.requestPermission();
 }
+
+// GLOBAL TOGGLE
+document.getElementById("notifBtn").onclick = () => {
+  notificationsEnabled = !notificationsEnabled;
+  alert(notificationsEnabled ? "Notifications ON" : "Notifications OFF");
+};
 
 // START
 render();
