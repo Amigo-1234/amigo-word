@@ -1,9 +1,0 @@
-/* // removed: root theme variables and base styles moved to styles.base.css */
-/* // removed: layout & screen containers moved to styles.layout.css */
-/* // removed: shared components (cards, buttons, forms, chips, nav, etc.) moved to styles.components.css */
-/* // removed: feature-specific styles (flashcards, quiz, profile, stats, settings, tap ripple) moved to styles.screens.css */
-
-@import url("./styles.base.css");
-@import url("./styles.layout.css");
-@import url("./styles.components.css");
-@import url("./styles.screens.css");
