@@ -1,36 +1,365 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AMIGO</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ff0000">
+  <meta charset="UTF-8" />
+  <title>AMIGO 🔴 – Smart English Trainer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div class="app-root">
+    <!-- Main App Shell -->
+    <div class="app-shell">
+      <!-- Screens -->
+      <main class="app-main">
+        <!-- HOME / DASHBOARD -->
+        <section class="screen screen-active" data-screen="home">
+          <div class="screen-scroll">
+            <header class="top-header">
+              <div class="greeting">
+                <div class="greeting-title">Welcome back, <span class="accent">AMIGO</span> 👋</div>
+                <div class="greeting-subtitle">Let’s level up your English today.</div>
+              </div>
+              <div class="streak-pill">
+                <span class="streak-icon">🔥</span>
+                <span class="streak-label">5-day streak</span>
+              </div>
+            </header>
 
-  <header>
-    <h1>AMIGO</h1>
-    <p>Your Smart Word Trainer</p>
-  </header>
+            <section class="card glass-card progress-card">
+              <div class="card-header-row">
+                <div>
+                  <div class="card-title">Daily Progress</div>
+                  <div class="card-subtitle">Words learned today</div>
+                </div>
+                <div class="progress-value"><span id="dailyLearnedCount">6</span>/10</div>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-bar-inner" id="dailyProgressBar"></div>
+              </div>
+            </section>
 
-  <div class="form-card">
-    <input id="word" placeholder="Word..." />
-    <input id="meaning" placeholder="Meaning..." />
-    <input id="time" type="number" placeholder="Interval (minutes)" />
-    <button id="addBtn">+ Add Word</button>
+            <section class="card glass-card wotd-card">
+              <div class="card-header-row">
+                <div>
+                  <div class="card-label">Word of the Day</div>
+                  <div class="wotd-badge">Featured</div>
+                </div>
+                <button class="icon-button primary-icon-button" id="shuffleWOTDBtn" aria-label="Shuffle word of the day">
+                  ⟳
+                </button>
+              </div>
+              <div class="wotd-main">
+                <div class="wotd-word" id="wotdWord">eloquent</div>
+                <div class="wotd-phonetic">/ˈɛləkwənt/</div>
+                <div class="wotd-meaning" id="wotdMeaning">Fluent or persuasive in speaking or writing.</div>
+                <div class="wotd-example" id="wotdExample">“Her speech was so eloquent that the audience fell silent.”</div>
+              </div>
+            </section>
+
+            <section class="card glass-card quick-actions-card">
+              <div class="card-header-row">
+                <div class="card-title">Quick actions</div>
+              </div>
+              <div class="pill-row">
+                <button class="pill-btn" data-nav-target="flashcards">Flashcard mode</button>
+                <button class="pill-btn" data-nav-target="quiz">Quick quiz</button>
+                <button class="pill-btn" data-nav-target="words">Your words</button>
+              </div>
+            </section>
+
+            <section class="card glass-card gamification-card">
+              <div class="card-header-row">
+                <div>
+                  <div class="card-title">Today’s journey</div>
+                  <div class="card-subtitle">Earn XP and climb levels</div>
+                </div>
+                <div class="level-pill">
+                  <span id="currentLevelLabel">Beginner</span>
+                </div>
+              </div>
+              <div class="xp-row">
+                <div class="xp-text">
+                  <span id="currentXP">120</span> XP · <span id="nextLevelXP">200</span> XP to next level
+                </div>
+                <div class="xp-bar">
+                  <div class="xp-bar-inner" id="xpBar"></div>
+                </div>
+              </div>
+              <div class="badge-row">
+                <div class="badge-chip badge-chip-active">
+                  <span class="badge-icon">🔥</span>
+                  <span>Consistent Learner</span>
+                </div>
+                <div class="badge-chip">
+                  <span class="badge-icon">🧠</span>
+                  <span>Genius</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- WORDS / LIST + ADD -->
+        <section class="screen" data-screen="words">
+          <div class="screen-scroll">
+            <header class="top-header">
+              <div class="greeting">
+                <div class="greeting-title">Your words</div>
+                <div class="greeting-subtitle">Manage and track what you’re learning.</div>
+              </div>
+            </header>
+
+            <!-- Add Word Section -->
+            <section class="card glass-card add-word-card">
+              <div class="card-header-row">
+                <div class="card-title">Add new word</div>
+              </div>
+              <form id="addWordForm" class="add-word-form">
+                <div class="field-group">
+                  <label class="field-label">Word</label>
+                  <input type="text" class="field-input" id="wordInput" placeholder="e.g. articulate" required />
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Meaning</label>
+                  <textarea class="field-input" id="meaningInput" rows="2" placeholder="Clear and effective in speech" required></textarea>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Interval (minutes)</label>
+                  <div class="field-with-pill">
+                    <input type="number" min="1" max="240" class="field-input" id="intervalInput" placeholder="e.g. 5" required />
+                    <div class="field-pill">mins</div>
+                  </div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Example sentence (optional)</label>
+                  <textarea class="field-input" id="exampleInput" rows="2" placeholder="He gave an articulate presentation."></textarea>
+                </div>
+                <button type="submit" class="primary-btn primary-btn-glow">Save word</button>
+              </form>
+            </section>
+
+            <!-- Word List -->
+            <section class="card glass-card word-list-card">
+              <div class="card-header-row">
+                <div class="card-title">Smart cards</div>
+                <div class="card-subtitle" id="wordCountSubtitle">3 words</div>
+              </div>
+              <div class="word-list" id="wordList"></div>
+            </section>
+          </div>
+
+          <!-- Floating Add Button -->
+          <button class="fab primary-btn-glow" id="fabAddWord" aria-label="Add new word">+</button>
+        </section>
+
+        <!-- FLASHCARDS -->
+        <section class="screen" data-screen="flashcards">
+          <div class="screen-scroll flashcard-screen">
+            <header class="top-header">
+              <div class="greeting">
+                <div class="greeting-title">Flashcard mode</div>
+                <div class="greeting-subtitle">Swipe &amp; tap to learn faster.</div>
+              </div>
+              <div class="flashcard-counter">
+                <span id="flashcardIndex">1</span>/<span id="flashcardTotal">0</span>
+              </div>
+            </header>
+
+            <div class="flashcard-stack">
+              <div class="flashcard-container">
+                <!-- Dynamically injected flashcard -->
+              </div>
+            </div>
+
+            <div class="flashcard-actions">
+              <button class="secondary-btn" id="flashcardSkipBtn">Still learning</button>
+              <button class="primary-btn" id="flashcardKnowBtn">I know this</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- QUIZ -->
+        <section class="screen" data-screen="quiz">
+          <div class="screen-scroll quiz-screen">
+            <header class="top-header">
+              <div class="greeting">
+                <div class="greeting-title">Quick quiz</div>
+                <div class="greeting-subtitle">Test yourself in seconds.</div>
+              </div>
+              <div class="quiz-score-pill">
+                <span id="quizCorrect">0</span>/<span id="quizTotal">0</span>
+              </div>
+            </header>
+
+            <section class="card glass-card quiz-card">
+              <div class="quiz-mode-toggle">
+                <button class="pill-btn pill-btn-active" data-quiz-mode="choice">Multiple choice</button>
+                <button class="pill-btn" data-quiz-mode="fill">Fill in the blank</button>
+              </div>
+
+              <div class="quiz-body">
+                <div class="quiz-question" id="quizQuestion">Loading question…</div>
+
+                <div class="quiz-choices" id="quizChoices"></div>
+
+                <form class="quiz-fill-form hidden" id="quizFillForm">
+                  <input type="text" class="field-input" id="quizFillInput" placeholder="Type the missing word" autocomplete="off" />
+                  <button class="primary-btn" type="submit">Check</button>
+                </form>
+
+                <div class="quiz-feedback" id="quizFeedback"></div>
+              </div>
+
+              <button class="secondary-btn quiz-next-btn" id="quizNextBtn">Next question</button>
+            </section>
+          </div>
+        </section>
+
+        <!-- PROFILE / STATS / SETTINGS -->
+        <section class="screen" data-screen="profile">
+          <div class="screen-scroll profile-screen">
+            <header class="top-header profile-header">
+              <div class="profile-main">
+                <div class="avatar-circle">A</div>
+                <div>
+                  <div class="greeting-title">AMIGO</div>
+                  <div class="greeting-subtitle">Your personal English trainer</div>
+                </div>
+              </div>
+              <div class="profile-level">
+                <span class="profile-level-label" id="profileLevelLabel">Beginner</span>
+              </div>
+            </header>
+
+            <!-- XP & Level -->
+            <section class="card glass-card">
+              <div class="card-header-row">
+                <div class="card-title">Level &amp; XP</div>
+              </div>
+              <div class="xp-row">
+                <div class="xp-text">
+                  <span id="profileXP">120</span> XP · <span id="profileNextXP">200</span> XP to next level
+                </div>
+                <div class="xp-bar">
+                  <div class="xp-bar-inner" id="profileXPBar"></div>
+                </div>
+              </div>
+            </section>
+
+            <!-- STATS -->
+            <section class="card glass-card stats-card">
+              <div class="card-header-row">
+                <div class="card-title">Stats</div>
+              </div>
+              <div class="stats-grid">
+                <div class="stat-block">
+                  <div class="stat-label">Words learned</div>
+                  <div class="stat-value" id="statsWords">0</div>
+                </div>
+                <div class="stat-block">
+                  <div class="stat-label">Accuracy</div>
+                  <div class="stat-value" id="statsAccuracy">0%</div>
+                </div>
+                <div class="stat-block">
+                  <div class="stat-label">Daily streak</div>
+                  <div class="stat-value" id="statsStreak">5</div>
+                </div>
+                <div class="stat-block">
+                  <div class="stat-label">Total XP</div>
+                  <div class="stat-value" id="statsXP">120</div>
+                </div>
+              </div>
+
+              <div class="chart-wrapper">
+                <div class="chart-header">
+                  <span>Last 7 days</span>
+                  <span class="chart-label">Words / day</span>
+                </div>
+                <div class="chart-bars" id="statsChartBars">
+                  <!-- bars injected -->
+                </div>
+              </div>
+            </section>
+
+            <!-- NOTIFICATION SETTINGS -->
+            <section class="card glass-card settings-card">
+              <div class="card-header-row">
+                <div class="card-title">Notifications</div>
+              </div>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-label">Training reminders</div>
+                  <div class="settings-sub">Stay on track with gentle nudges.</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="notificationsToggle" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="settings-column">
+                <div class="settings-label">Learning intensity</div>
+                <div class="intensity-row" id="intensityRow">
+                  <button class="intensity-chip intensity-chip-active" data-intensity="light">
+                    <div class="intensity-title">Light</div>
+                    <div class="intensity-sub">Every 30 mins</div>
+                  </button>
+                  <button class="intensity-chip" data-intensity="normal">
+                    <div class="intensity-title">Normal</div>
+                    <div class="intensity-sub">Every 10 mins</div>
+                  </button>
+                  <button class="intensity-chip" data-intensity="hardcore">
+                    <div class="intensity-title">Hardcore</div>
+                    <div class="intensity-sub">Every 2 mins</div>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <!-- THEME -->
+            <section class="card glass-card">
+              <div class="settings-row">
+                <div>
+                  <div class="settings-label">Theme</div>
+                  <div class="settings-sub">Dark mode is always on. Red accent is your power.</div>
+                </div>
+                <div class="theme-dot theme-dot-active"></div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+
+      <!-- Bottom Navigation -->
+      <nav class="bottom-nav">
+        <button class="bottom-nav-item bottom-nav-item-active" data-nav="home">
+          <span class="nav-icon">⌂</span>
+          <span class="nav-label">Home</span>
+        </button>
+        <button class="bottom-nav-item" data-nav="words">
+          <span class="nav-icon">✎</span>
+          <span class="nav-label">Words</span>
+        </button>
+        <button class="bottom-nav-item" data-nav="flashcards">
+          <span class="nav-icon">🃏</span>
+          <span class="nav-label">Flashcards</span>
+        </button>
+        <button class="bottom-nav-item" data-nav="quiz">
+          <span class="nav-icon">❓</span>
+          <span class="nav-label">Quiz</span>
+        </button>
+        <button class="bottom-nav-item" data-nav="profile">
+          <span class="nav-icon">👤</span>
+          <span class="nav-label">Profile</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Tap ripple (haptic-style visual feedback) -->
+    <span class="tap-ripple" id="tapRipple"></span>
   </div>
 
-  <div id="cards"></div>
-
-<button id="testBtn">🔔 Test Notification</button>
-
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
-<!-- YOUR APP MUST BE LAST -->
-<script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
