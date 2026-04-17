@@ -8,6 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#120707">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
 
 <style>
 * { box-sizing: border-box; }
@@ -308,8 +310,9 @@ function startReminder(i) {
   timers[i] = setInterval(() => {
     if (item.isActive && notificationsEnabled && Notification.permission === "granted") {
       new Notification(`📘 ${item.word}`, {
-        body: item.meaning
-      });
+  body: item.meaning,
+  icon: "icon.png"
+});
     }
   }, item.interval * 60000);
 }
