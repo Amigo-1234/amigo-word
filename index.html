@@ -2,14 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Word Reminder</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#120707">
-<link rel="icon" href="icon.png">
-<link rel="apple-touch-icon" href="icon.png">
 
 <style>
 * { box-sizing: border-box; }
@@ -21,33 +17,139 @@ body {
   color: white;
 }
 
+/* HEADER */
 .header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 15px;
   background: #120707;
+  border-bottom: 1px solid #2a0f0f;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 20px;
+  color: #ff4d4d;
+}
+
+.headerBtns {
+  display: flex;
+  gap: 10px;
 }
 
 .addBtn {
-  background: linear-gradient(135deg, #6d0f1a, #b11226);
+  background: linear-gradient(135deg, #6d0f1a, #ff4d4d);
   border: none;
   width: 42px;
   height: 42px;
   border-radius: 12px;
+  font-size: 22px;
   color: white;
+  cursor: pointer;
 }
 
+/* LIST */
 #list {
   padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
+/* CARD */
 .card {
-  background: rgba(109,15,26,0.15);
-  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255,0,0,0.25), rgba(0,0,0,0.5));
+  border: 1px solid rgba(255,0,0,0.3);
+  border-radius: 18px;
   padding: 15px;
-  margin-bottom: 10px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 25px rgba(255,0,0,0.25);
+  transition: 0.2s;
 }
 
+.card:hover {
+  transform: scale(1.02);
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.word {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.meaning {
+  font-size: 14px;
+  color: #ddd;
+  margin: 6px 0;
+}
+
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.time {
+  font-size: 12px;
+  color: #ff7b7b;
+}
+
+/* TOGGLE */
+.switch {
+  position: relative;
+  width: 46px;
+  height: 24px;
+}
+
+.switch input { display: none; }
+
+.slider {
+  position: absolute;
+  inset: 0;
+  background: #333;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+input:checked + .slider {
+  background: #ff4d4d;
+}
+
+input:checked + .slider::before {
+  transform: translateX(22px);
+}
+
+/* DELETE */
+.delete {
+  font-size: 18px;
+  color: #ff4d4d;
+  background: rgba(255,0,0,0.1);
+  border-radius: 8px;
+  padding: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+/* MODAL */
 #modal {
   position: fixed;
   inset: 0;
@@ -62,6 +164,12 @@ body {
   padding: 20px;
   border-radius: 16px;
   width: 90%;
+  max-width: 350px;
+}
+
+.modalContent h2 {
+  color: #ff4d4d;
+  text-align: center;
 }
 
 input {
@@ -73,144 +181,164 @@ input {
   background: #1f0b0b;
   color: white;
 }
+
+.save {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #6d0f1a, #ff4d4d);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-  <h2>Word Reminder</h2>
-  <button onclick="openModal()" class="addBtn">+</button>
+  <h1>Word Reminder</h1>
+  <div class="headerBtns">
+    <button class="addBtn" onclick="openModal()">+</button>
+  </div>
 </div>
 
 <div id="list"></div>
 
-<!-- TOKEN DISPLAY -->
-<div id="tokenBox" style="padding:10px;font-size:12px;color:#ff8080;"></div>
-
 <!-- MODAL -->
-<div id="modal">
-  <div class="modalContent">
-    <h3>Add Word</h3>
+<div id="modal" onclick="closeModal()">
+  <div class="modalContent" onclick="event.stopPropagation()">
+    <h2>Add Word</h2>
     <input id="word" placeholder="Word">
     <input id="meaning" placeholder="Meaning">
     <input id="time" type="number" placeholder="Minutes">
-    <button onclick="addWord()">Save</button>
+    <button class="save" onclick="addWord()">Save</button>
   </div>
 </div>
 
-<!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
 <script>
-// 🔥 INIT
-firebase.initializeApp({
-  apiKey: "AIzaSyDYpP_Uk52egku25vZ4l4iRfkswlc6U4T0",
-  authDomain: "amigo-ai-bc5ac.firebaseapp.com",
-  projectId: "amigo-ai-bc5ac",
-  storageBucket: "amigo-ai-bc5ac.appspot.com",
-  messagingSenderId: "280877895436",
-  appId: "1:280877895436:web:bef1e5f9f067d1cab34329"
-});
+// DOM
+const modal = document.getElementById("modal");
+const list = document.getElementById("list");
+const wordInput = document.getElementById("word");
+const meaningInput = document.getElementById("meaning");
+const timeInput = document.getElementById("time");
 
-const messaging = firebase.messaging();
-const db = firebase.firestore();
+// DATA
+let words = JSON.parse(localStorage.getItem("words")) || [];
+let timers = {};
 
-// ======================
-// 🔔 FIREBASE SETUP (FIXED)
-// ======================
-async function setupPush() {
-  try {
-    const permission = await Notification.requestPermission();
+// MODAL
+function openModal() { modal.style.display = "flex"; }
+function closeModal() { modal.style.display = "none"; }
 
-    if (permission !== "granted") {
-      document.getElementById("tokenBox").innerText = "❌ Permission denied";
-      return;
-    }
-
-    // REGISTER SERVICE WORKER
-    const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-
-    // GET TOKEN (IMPORTANT FOR IPHONE)
-    const token = await messaging.getToken({
-      vapidKey: "BHaUYFnHFOGdr7oTy3L0Ie6Z4gw24mHbprxGsF4I49X1kd4nJkOFNYSaG5K7HsHCSJ2Nbf2-Dp1PvrBpUbvUOsw",
-      serviceWorkerRegistration: reg
-    });
-
-    if (token) {
-      document.getElementById("tokenBox").innerText = "TOKEN: " + token;
-
-      await db.collection("users").doc(token).set({
-        token,
-        createdAt: new Date()
-      });
-
-    } else {
-      document.getElementById("tokenBox").innerText = "⚠️ No token";
-    }
-
-  } catch (err) {
-    document.getElementById("tokenBox").innerText = "ERROR: " + err.message;
-  }
-}
-
-setupPush();
-
-// ======================
 // ADD WORD
-// ======================
-async function addWord() {
-  const word = document.getElementById("word").value;
-  const meaning = document.getElementById("meaning").value;
-  const time = Number(document.getElementById("time").value);
+function addWord() {
+  const word = wordInput.value.trim();
+  const meaning = meaningInput.value.trim();
+  const time = timeInput.value;
 
-  if (!word || !meaning || !time) return alert("Fill all");
+  if (!word || !meaning || !time) return alert("Fill all fields");
 
-  await db.collection("words").add({
+  const newWord = {
     word,
     meaning,
-    interval: time
-  });
+    interval: Number(time),
+    isActive: true
+  };
+
+  words.push(newWord);
+  localStorage.setItem("words", JSON.stringify(words));
+
+  wordInput.value = "";
+  meaningInput.value = "";
+  timeInput.value = "";
 
   closeModal();
-  loadWords();
+  render();
+  startReminder(words.length - 1);
 }
 
-// ======================
-// LOAD WORDS
-// ======================
-async function loadWords() {
-  const snapshot = await db.collection("words").get();
-  const list = document.getElementById("list");
-
+// RENDER
+function render() {
   list.innerHTML = "";
 
-  snapshot.forEach(doc => {
-    const data = doc.data();
+  words.forEach((item, i) => {
     list.innerHTML += `
       <div class="card">
-        <b>${data.word}</b>
-        <p>${data.meaning}</p>
+        <div class="top">
+          <div class="word">${item.word}</div>
+          <button class="delete" onclick="removeWord(${i})">🗑</button>
+        </div>
+
+        <div class="meaning">${item.meaning}</div>
+
+        <div class="bottom">
+          <div class="time">${item.interval} min</div>
+
+          <label class="switch">
+            <input type="checkbox" ${item.isActive ? "checked" : ""} onchange="toggle(${i})">
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
     `;
   });
 }
 
-// ======================
-// MODAL
-// ======================
-function openModal() {
-  document.getElementById("modal").style.display = "flex";
+// TOGGLE
+function toggle(i) {
+  words[i].isActive = !words[i].isActive;
+  localStorage.setItem("words", JSON.stringify(words));
+
+  if (words[i].isActive) startReminder(i);
+  else {
+    clearInterval(timers[i]);
+    delete timers[i];
+  }
+
+  render();
 }
 
-function closeModal() {
-  document.getElementById("modal").style.display = "none";
+// DELETE
+function removeWord(i) {
+  clearInterval(timers[i]);
+  delete timers[i];
+  words.splice(i, 1);
+  localStorage.setItem("words", JSON.stringify(words));
+  render();
 }
 
-// ======================
-loadWords();
+// REMINDER
+function startReminder(i) {
+  if (timers[i]) return;
+
+  const item = words[i];
+
+  timers[i] = setInterval(() => {
+    if (item.isActive && Notification.permission === "granted") {
+      new Notification(`📘 ${item.word}`, {
+        body: item.meaning
+      });
+    }
+  }, item.interval * 60000);
+}
+
+// INIT
+function init() {
+  words.forEach((_, i) => {
+    if (words[i].isActive) startReminder(i);
+  });
+}
+
+// ASK PERMISSION
+if (Notification.permission !== "granted") {
+  Notification.requestPermission();
+}
+
+// START
+render();
+init();
 </script>
 
 </body>
