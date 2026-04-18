@@ -218,7 +218,7 @@ const timeInput = document.getElementById("time");
 // DATA
 let words = JSON.parse(localStorage.getItem("words")) || [];
 let timers = {};
-let notificationsEnabled = true;
+
 
 // MODAL
 function openModal() { modal.style.display = "flex"; }
@@ -308,7 +308,7 @@ function startReminder(i) {
   const item = words[i];
 
   timers[i] = setInterval(() => {
-    if (item.isActive && notificationsEnabled && Notification.permission === "granted") {
+    if (item.isActive && Notification.permission === "granted") {
       new Notification(`📘 ${item.word}`, {
   body: item.meaning,
   icon: "icon.png"
@@ -331,9 +331,29 @@ if (Notification.permission !== "granted") {
 
 // GLOBAL TOGGLE
 document.getElementById("notifBtn").onclick = () => {
-  notificationsEnabled = !notificationsEnabled;
-  alert(notificationsEnabled ? "Notifications ON" : "Notifications OFF");
+
+  // Ask permission if not granted
+  if (Notification.permission !== "granted") {
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        sendTestNotification();
+      } else {
+        alert("Please allow notifications");
+      }
+    });
+  } else {
+    sendTestNotification();
+  }
+
 };
+
+// FUNCTION
+function sendTestNotification() {
+  new Notification("📘 Test Notification", {
+    body: "Your reminder system is working perfectly 🔥",
+    icon: "icon.png"
+  });
+}
 
 // START
 render();
