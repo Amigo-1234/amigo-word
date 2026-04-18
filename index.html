@@ -21,34 +21,11 @@ body {
   color: white;
 }
 
-html, body {
-  height: 100%;
-  overflow: hidden;
-}
-
-#list {
-  height: calc(100vh - 70px);
-  overflow-y: auto;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-/* HEADER */
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   padding: 15px;
   background: #120707;
-  border-bottom: 1px solid #2a0f0f;
-}
-
-.header h1 {
-  margin: 0;
-  font-size: 20px;
-  color: #b11226;
 }
 
 .addBtn {
@@ -57,98 +34,20 @@ html, body {
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  font-size: 22px;
   color: white;
-  cursor: pointer;
 }
 
-#notifBtn {
-  background: transparent;
-  border: none;
-  font-size: 20px;
-  color: #b11226;
-  cursor: pointer;
+#list {
+  padding: 15px;
 }
 
-/* CARD */
 .card {
-  background: rgba(109, 15, 26, 0.15);
-  border: 1px solid rgba(177, 18, 38, 0.25);
+  background: rgba(109,15,26,0.15);
   border-radius: 16px;
   padding: 15px;
-  backdrop-filter: blur(8px);
+  margin-bottom: 10px;
 }
 
-.top {
-  display: flex;
-  justify-content: space-between;
-}
-
-.word {
-  font-weight: 600;
-}
-
-.meaning {
-  font-size: 14px;
-  color: #ddd;
-  margin: 6px 0;
-}
-
-.bottom {
-  display: flex;
-  justify-content: space-between;
-}
-
-.time {
-  font-size: 12px;
-  color: #d46a6a;
-}
-
-/* TOGGLE */
-.switch {
-  position: relative;
-  width: 46px;
-  height: 24px;
-}
-
-.switch input { display: none; }
-
-.slider {
-  position: absolute;
-  inset: 0;
-  background: #333;
-  border-radius: 20px;
-  cursor: pointer;
-}
-
-.slider::before {
-  content: "";
-  position: absolute;
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  top: 3px;
-  background: white;
-  border-radius: 50%;
-  transition: 0.3s;
-}
-
-input:checked + .slider {
-  background: #b11226;
-}
-
-input:checked + .slider::before {
-  transform: translateX(22px);
-}
-
-.delete {
-  background: none;
-  border: none;
-  color: #ff5c5c;
-  cursor: pointer;
-}
-
-/* MODAL */
 #modal {
   position: fixed;
   inset: 0;
@@ -163,7 +62,6 @@ input:checked + .slider::before {
   padding: 20px;
   border-radius: 16px;
   width: 90%;
-  max-width: 350px;
 }
 
 input {
@@ -175,60 +73,44 @@ input {
   background: #1f0b0b;
   color: white;
 }
-
-.save {
-  width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #6d0f1a, #b11226);
-  border: none;
-  border-radius: 10px;
-  color: white;
-}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-  <h1>Word Reminder</h1>
-  <button id="notifBtn">🔔</button>
-  <button class="addBtn" onclick="openModal()">+</button>
+  <h2>Word Reminder</h2>
+  <button onclick="openModal()" class="addBtn">+</button>
 </div>
 
 <div id="list"></div>
 
+<!-- TOKEN DISPLAY -->
+<div id="tokenBox" style="padding:10px;font-size:12px;color:#ff8080;"></div>
+
+<!-- MODAL -->
 <div id="modal">
   <div class="modalContent">
-    <h2>Add Word</h2>
+    <h3>Add Word</h3>
     <input id="word" placeholder="Word">
     <input id="meaning" placeholder="Meaning">
     <input id="time" type="number" placeholder="Minutes">
-    <button class="save" onclick="addWord()">Save</button>
+    <button onclick="addWord()">Save</button>
   </div>
-
 </div>
 
-
-<div id="tokenBox" style="
-  padding:10px;
-  font-size:12px;
-  word-break:break-all;
-  color:#ff8080;
-"></div>
-
-
-
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-// 🔥 INIT FIREBASE
+// 🔥 INIT
 firebase.initializeApp({
   apiKey: "AIzaSyDYpP_Uk52egku25vZ4l4iRfkswlc6U4T0",
   authDomain: "amigo-ai-bc5ac.firebaseapp.com",
   projectId: "amigo-ai-bc5ac",
-  storageBucket: "amigo-ai-bc5ac.firebasestorage.app",
+  storageBucket: "amigo-ai-bc5ac.appspot.com",
   messagingSenderId: "280877895436",
   appId: "1:280877895436:web:bef1e5f9f067d1cab34329"
 });
@@ -236,160 +118,98 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 const db = firebase.firestore();
 
-// DOM
-const modal = document.getElementById("modal");
-const list = document.getElementById("list");
-const wordInput = document.getElementById("word");
-const meaningInput = document.getElementById("meaning");
-const timeInput = document.getElementById("time");
-
-// LOCAL STATE (temporary)
-let words = [];
-let timers = {};
-
-// =====================
-// 🔔 FIREBASE TOKEN
-// =====================
-async function initFirebaseMessaging() {
+// ======================
+// 🔔 FIREBASE SETUP (FIXED)
+// ======================
+async function setupPush() {
   try {
     const permission = await Notification.requestPermission();
-    if (permission !== "granted") return;
 
+    if (permission !== "granted") {
+      document.getElementById("tokenBox").innerText = "❌ Permission denied";
+      return;
+    }
+
+    // REGISTER SERVICE WORKER
+    const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+
+    // GET TOKEN (IMPORTANT FOR IPHONE)
     const token = await messaging.getToken({
-      vapidKey: "BHaUYFnHFOGdr7oTy3L0Ie6Z4gw24mHbprxGsF4I49X1kd4nJkOFNYSaG5K7HsHCSJ2Nbf2-Dp1PvrBpUbvUOsw"
+      vapidKey: "BHaUYFnHFOGdr7oTy3L0Ie6Z4gw24mHbprxGsF4I49X1kd4nJkOFNYSaG5K7HsHCSJ2Nbf2-Dp1PvrBpUbvUOsw",
+      serviceWorkerRegistration: reg
     });
 
     if (token) {
-  document.getElementById("tokenBox").innerText = "TOKEN: " + token;
+      document.getElementById("tokenBox").innerText = "TOKEN: " + token;
 
-  await db.collection("users").doc(token).set({
-    token: token,
-    createdAt: new Date()
-  });
-} else {
-  document.getElementById("tokenBox").innerText = "⚠️ No token generated";
-}
+      await db.collection("users").doc(token).set({
+        token,
+        createdAt: new Date()
+      });
 
-    // SAVE TOKEN TO FIRESTORE
-    await db.collection("users").doc(token).set({
-      token: token,
-      createdAt: new Date()
-    });
+    } else {
+      document.getElementById("tokenBox").innerText = "⚠️ No token";
+    }
 
   } catch (err) {
-    console.error("Notification error:", err);
+    document.getElementById("tokenBox").innerText = "ERROR: " + err.message;
   }
 }
 
-initFirebaseMessaging();
+setupPush();
 
-// =====================
-// 🧠 SAVE WORD (FIREBASE)
-// =====================
+// ======================
+// ADD WORD
+// ======================
 async function addWord() {
-  const word = wordInput.value.trim();
-  const meaning = meaningInput.value.trim();
-  const time = Number(timeInput.value);
+  const word = document.getElementById("word").value;
+  const meaning = document.getElementById("meaning").value;
+  const time = Number(document.getElementById("time").value);
 
   if (!word || !meaning || !time) return alert("Fill all");
 
   await db.collection("words").add({
     word,
     meaning,
-    interval: time,
-    createdAt: Date.now()
+    interval: time
   });
 
-  wordInput.value = "";
-  meaningInput.value = "";
-  timeInput.value = "";
-
   closeModal();
-  alert("Saved to cloud ✅");
+  loadWords();
 }
 
-// =====================
-// 📥 LOAD WORDS FROM FIREBASE
-// =====================
+// ======================
+// LOAD WORDS
+// ======================
 async function loadWords() {
   const snapshot = await db.collection("words").get();
-  words = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isActive: true }));
-  render();
-}
+  const list = document.getElementById("list");
 
-// =====================
-// 🎨 UI RENDER
-// =====================
-function render() {
   list.innerHTML = "";
 
-  words.forEach((item, i) => {
+  snapshot.forEach(doc => {
+    const data = doc.data();
     list.innerHTML += `
       <div class="card">
-        <div class="top">
-          <div class="word">${item.word}</div>
-          <button class="delete" onclick="removeWord('${item.id}')">🗑</button>
-        </div>
-
-        <div class="meaning">${item.meaning}</div>
-
-        <div class="bottom">
-          <div class="time">${item.interval} min</div>
-
-          <label class="switch">
-            <input type="checkbox" checked onchange="toggle(${i})">
-            <span class="slider"></span>
-          </label>
-        </div>
+        <b>${data.word}</b>
+        <p>${data.meaning}</p>
       </div>
     `;
   });
 }
 
-// =====================
-// 🔁 TOGGLE (UI ONLY NOW)
-// =====================
-function toggle(i) {
-  words[i].isActive = !words[i].isActive;
-}
-
-// =====================
-// 🗑 DELETE (FIREBASE)
-// =====================
-async function removeWord(id) {
-  await db.collection("words").doc(id).delete();
-  loadWords();
-}
-
-// =====================
-// 📬 FOREGROUND MESSAGE
-// =====================
-messaging.onMessage((payload) => {
-  console.log("Foreground message:", payload);
-
-  new Notification(payload.notification.title, {
-    body: payload.notification.body,
-    icon: "icon.png"
-  });
-});
-
-// =====================
-// 🔔 TEST BUTTON
-// =====================
-document.getElementById("notifBtn").onclick = () => {
-  new Notification("📘 Test Notification", {
-    body: "Firebase system working 🔥",
-    icon: "icon.png"
-  });
-};
-
-// =====================
+// ======================
 // MODAL
-// =====================
-function openModal() { modal.style.display = "flex"; }
-function closeModal() { modal.style.display = "none"; }
+// ======================
+function openModal() {
+  document.getElementById("modal").style.display = "flex";
+}
 
-// START
+function closeModal() {
+  document.getElementById("modal").style.display = "none";
+}
+
+// ======================
 loadWords();
 </script>
 
