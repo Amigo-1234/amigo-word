@@ -206,15 +206,15 @@ input {
     <button class="save" onclick="addWord()">Save</button>
   </div>
 
+</div>
 
-  <div id="tokenBox" style="
+
+<div id="tokenBox" style="
   padding:10px;
   font-size:12px;
   word-break:break-all;
   color:#ff8080;
 "></div>
-
-</div>
 
 
 
@@ -259,7 +259,16 @@ async function initFirebaseMessaging() {
       vapidKey: "BHaUYFnHFOGdr7oTy3L0Ie6Z4gw24mHbprxGsF4I49X1kd4nJkOFNYSaG5K7HsHCSJ2Nbf2-Dp1PvrBpUbvUOsw"
     });
 
-    document.getElementById("tokenBox").innerText = "TOKEN: " + token;
+    if (token) {
+  document.getElementById("tokenBox").innerText = "TOKEN: " + token;
+
+  await db.collection("users").doc(token).set({
+    token: token,
+    createdAt: new Date()
+  });
+} else {
+  document.getElementById("tokenBox").innerText = "⚠️ No token generated";
+}
 
     // SAVE TOKEN TO FIRESTORE
     await db.collection("users").doc(token).set({
