@@ -205,13 +205,26 @@ input {
     <input id="time" type="number" placeholder="Minutes">
     <button class="save" onclick="addWord()">Save</button>
   </div>
+
+
+  <div id="tokenBox" style="
+  padding:10px;
+  font-size:12px;
+  word-break:break-all;
+  color:#ff8080;
+"></div>
+
 </div>
+
+
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
-<script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-  firebase.initializeApp({
+<script>
+// 🔥 INIT FIREBASE
+firebase.initializeApp({
   apiKey: "AIzaSyDYpP_Uk52egku25vZ4l4iRfkswlc6U4T0",
   authDomain: "amigo-ai-bc5ac.firebaseapp.com",
   projectId: "amigo-ai-bc5ac",
@@ -221,6 +234,8 @@ input {
 });
 
 const messaging = firebase.messaging();
+const db = firebase.firestore();
+
 // DOM
 const modal = document.getElementById("modal");
 const list = document.getElementById("list");
@@ -228,51 +243,29 @@ const wordInput = document.getElementById("word");
 const meaningInput = document.getElementById("meaning");
 const timeInput = document.getElementById("time");
 
-// DATA
-let words = JSON.parse(localStorage.getItem("words")) || [];
+// LOCAL STATE (temporary)
+let words = [];
 let timers = {};
 
-
-// MODAL
-function openModal() { modal.style.display = "flex"; }
-function closeModal() { modal.style.display = "none"; }
-
-// ADD
-function addWord() {
-  const word = wordInput.value.trim();
-  const meaning = meaningInput.value.trim();
-  const time = timeInput.value;
-
-  if (!word || !meaning || !time) return alert("Fill all");
-
-  const newWord = {
-    word,
-    meaning,
-    interval: Number(time),
-    isActive: true
-  };
-
-  words.push(newWord);
-  localStorage.setItem("words", JSON.stringify(words));
-
-  wordInput.value = "";
-  meaningInput.value = "";
-  timeInput.value = "";
-
-  closeModal();
-  render();
-  startReminder(words.length - 1);
-}
-
+// =====================
+// 🔔 FIREBASE TOKEN
+// =====================
 async function initFirebaseMessaging() {
   try {
-    await Notification.requestPermission();
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") return;
 
     const token = await messaging.getToken({
       vapidKey: "BHaUYFnHFOGdr7oTy3L0Ie6Z4gw24mHbprxGsF4I49X1kd4nJkOFNYSaG5K7HsHCSJ2Nbf2-Dp1PvrBpUbvUOsw"
     });
 
-    console.log("🔥 DEVICE TOKEN:", token);
+    document.getElementById("tokenBox").innerText = "TOKEN: " + token;
+
+    // SAVE TOKEN TO FIRESTORE
+    await db.collection("users").doc(token).set({
+      token: token,
+      createdAt: new Date()
+    });
 
   } catch (err) {
     console.error("Notification error:", err);
@@ -281,7 +274,43 @@ async function initFirebaseMessaging() {
 
 initFirebaseMessaging();
 
-// RENDER
+// =====================
+// 🧠 SAVE WORD (FIREBASE)
+// =====================
+async function addWord() {
+  const word = wordInput.value.trim();
+  const meaning = meaningInput.value.trim();
+  const time = Number(timeInput.value);
+
+  if (!word || !meaning || !time) return alert("Fill all");
+
+  await db.collection("words").add({
+    word,
+    meaning,
+    interval: time,
+    createdAt: Date.now()
+  });
+
+  wordInput.value = "";
+  meaningInput.value = "";
+  timeInput.value = "";
+
+  closeModal();
+  alert("Saved to cloud ✅");
+}
+
+// =====================
+// 📥 LOAD WORDS FROM FIREBASE
+// =====================
+async function loadWords() {
+  const snapshot = await db.collection("words").get();
+  words = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isActive: true }));
+  render();
+}
+
+// =====================
+// 🎨 UI RENDER
+// =====================
 function render() {
   list.innerHTML = "";
 
@@ -290,7 +319,7 @@ function render() {
       <div class="card">
         <div class="top">
           <div class="word">${item.word}</div>
-          <button class="delete" onclick="removeWord(${i})">🗑</button>
+          <button class="delete" onclick="removeWord('${item.id}')">🗑</button>
         </div>
 
         <div class="meaning">${item.meaning}</div>
@@ -299,7 +328,7 @@ function render() {
           <div class="time">${item.interval} min</div>
 
           <label class="switch">
-            <input type="checkbox" ${item.isActive ? "checked" : ""} onchange="toggle(${i})">
+            <input type="checkbox" checked onchange="toggle(${i})">
             <span class="slider"></span>
           </label>
         </div>
@@ -308,86 +337,51 @@ function render() {
   });
 }
 
-// TOGGLE
+// =====================
+// 🔁 TOGGLE (UI ONLY NOW)
+// =====================
 function toggle(i) {
   words[i].isActive = !words[i].isActive;
-  localStorage.setItem("words", JSON.stringify(words));
-
-  if (words[i].isActive) startReminder(i);
-  else {
-    clearInterval(timers[i]);
-    delete timers[i];
-  }
-
-  render();
 }
 
-// DELETE
-function removeWord(i) {
-  clearInterval(timers[i]);
-  delete timers[i];
-  words.splice(i, 1);
-  localStorage.setItem("words", JSON.stringify(words));
-  render();
+// =====================
+// 🗑 DELETE (FIREBASE)
+// =====================
+async function removeWord(id) {
+  await db.collection("words").doc(id).delete();
+  loadWords();
 }
 
-// REMINDER
-function startReminder(i) {
-  if (timers[i]) return;
+// =====================
+// 📬 FOREGROUND MESSAGE
+// =====================
+messaging.onMessage((payload) => {
+  console.log("Foreground message:", payload);
 
-  const item = words[i];
-
-  timers[i] = setInterval(() => {
-    if (item.isActive && Notification.permission === "granted") {
-      new Notification(`📘 ${item.word}`, {
-  body: item.meaning,
-  icon: "icon.png"
-});
-    }
-  }, item.interval * 60000);
-}
-
-// INIT
-function init() {
-  words.forEach((_, i) => {
-    if (words[i].isActive) startReminder(i);
-  });
-}
-
-// NOTIFICATION PERMISSION
-if (Notification.permission !== "granted") {
-  Notification.requestPermission();
-}
-
-// GLOBAL TOGGLE
-document.getElementById("notifBtn").onclick = () => {
-
-  // Ask permission if not granted
-  if (Notification.permission !== "granted") {
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") {
-        sendTestNotification();
-      } else {
-        alert("Please allow notifications");
-      }
-    });
-  } else {
-    sendTestNotification();
-  }
-
-};
-
-// FUNCTION
-function sendTestNotification() {
-  new Notification("📘 Test Notification", {
-    body: "Your reminder system is working perfectly 🔥",
+  new Notification(payload.notification.title, {
+    body: payload.notification.body,
     icon: "icon.png"
   });
-}
+});
+
+// =====================
+// 🔔 TEST BUTTON
+// =====================
+document.getElementById("notifBtn").onclick = () => {
+  new Notification("📘 Test Notification", {
+    body: "Firebase system working 🔥",
+    icon: "icon.png"
+  });
+};
+
+// =====================
+// MODAL
+// =====================
+function openModal() { modal.style.display = "flex"; }
+function closeModal() { modal.style.display = "none"; }
 
 // START
-render();
-init();
+loadWords();
 </script>
 
 </body>
