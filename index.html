@@ -207,7 +207,20 @@ input {
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
 <script>
+
+  firebase.initializeApp({
+  apiKey: "AIzaSyDYpP_Uk52egku25vZ4l4iRfkswlc6U4T0",
+  authDomain: "amigo-ai-bc5ac.firebaseapp.com",
+  projectId: "amigo-ai-bc5ac",
+  storageBucket: "amigo-ai-bc5ac.firebasestorage.app",
+  messagingSenderId: "280877895436",
+  appId: "1:280877895436:web:bef1e5f9f067d1cab34329"
+});
+
+const messaging = firebase.messaging();
 // DOM
 const modal = document.getElementById("modal");
 const list = document.getElementById("list");
@@ -250,6 +263,23 @@ function addWord() {
   render();
   startReminder(words.length - 1);
 }
+
+async function initFirebaseMessaging() {
+  try {
+    await Notification.requestPermission();
+
+    const token = await messaging.getToken({
+      vapidKey: "BHaUYFnHFOGdr7oTy3L0Ie6Z4gw24mHbprxGsF4I49X1kd4nJkOFNYSaG5K7HsHCSJ2Nbf2-Dp1PvrBpUbvUOsw"
+    });
+
+    console.log("🔥 DEVICE TOKEN:", token);
+
+  } catch (err) {
+    console.error("Notification error:", err);
+  }
+}
+
+initFirebaseMessaging();
 
 // RENDER
 function render() {
